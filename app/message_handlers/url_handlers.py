@@ -21,7 +21,7 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
 
         # TODO реализовать кэширование через Redis
         progress_hook.message_id = await client.edit_message(entity=progress_hook.message_id,
-                                                             message='Начинаю загрузку видео')
+                                                             message='Загружаю видео')
 
         file_id = await download_and_upload_video(url=f'https://www.youtube.com/watch?v={video_uid}',
                                                   progress_hook=progress_hook)
