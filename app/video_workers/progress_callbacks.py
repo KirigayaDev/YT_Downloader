@@ -1,5 +1,6 @@
-import asyncio
-
+"""
+Коллбэки для отображения прогрессов видео
+"""
 from telegram_client import client
 
 

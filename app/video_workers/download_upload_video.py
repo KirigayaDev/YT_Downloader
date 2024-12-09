@@ -1,3 +1,4 @@
+"""Скачивание видео и выгрузка на сервера телеграмма"""
 import asyncio
 import yt_dlp
 import uuid

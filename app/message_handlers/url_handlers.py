@@ -1,3 +1,4 @@
+"""Обработка присылаемых ссылок"""
 from telethon import events
 
 from telegram_client import client
