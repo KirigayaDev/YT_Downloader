@@ -20,7 +20,8 @@ class DownloaderUploaderHooks:
         progress_len = math.floor(round(sent / total * 10))
         try:
             self.message_id = await client.edit_message(entity=self.message_id,
-                                                        message=f'{"■" * progress_len}{"□" * (10 - progress_len)}'
+                                                        message=f'Прогресс выгрузки видео'
+                                                                f'\n{"■" * progress_len}{"□" * (10 - progress_len)}'
                                                                 f' {progress_percent}%')
 
         except Exception:

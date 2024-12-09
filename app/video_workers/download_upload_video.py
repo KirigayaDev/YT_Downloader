@@ -38,8 +38,8 @@ async def _upload_video(video_path: str, progress_hook: DownloaderUploaderHooks)
 
 
 async def download_and_upload_video(url: str, progress_hook: DownloaderUploaderHooks) -> int:
-    video_path: str = await _download_video(url)
     try:
+        video_path: str = await _download_video(url)
         progress_hook.message_id = await client.edit_message(entity=progress_hook.message_id,
                                                              message='Начинаю выгрузку видео на сервера телеграмма')
 
@@ -50,6 +50,6 @@ async def download_and_upload_video(url: str, progress_hook: DownloaderUploaderH
         pass
 
     finally:
-        await asyncio.to_thread(os.remove, video_path)
-        await client.delete_messages(entity=None,
-                                     message_ids=progress_hook.message_id)
+        if os.path.exists(video_path):
+            await asyncio.gather(asyncio.to_thread(os.remove, video_path),
+                                 client.delete_messages(entity=None, message_ids=progress_hook.message_id))
