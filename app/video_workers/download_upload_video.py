@@ -50,6 +50,5 @@ async def download_and_upload_video(url: str, progress_hook: DownloaderUploaderH
         pass
 
     finally:
-        if os.path.exists(video_path):
-            await asyncio.gather(asyncio.to_thread(os.remove, video_path),
-                                 client.delete_messages(entity=None, message_ids=progress_hook.message_id))
+        await asyncio.gather(asyncio.to_thread(os.remove, video_path),
+                             client.delete_messages(entity=None, message_ids=progress_hook.message_id))
