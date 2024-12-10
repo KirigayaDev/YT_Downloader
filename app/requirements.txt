@@ -1,5 +1,5 @@
 telethon==1.38.*
 yt-dlp==2024.12.*
 pydantic==2.10.*
-pydantic-settings
-redis>=5.0.0
+pydantic-settings==2.6.*
+redis==5.0.*

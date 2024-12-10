@@ -25,7 +25,7 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
     """
     try:
         video_uid: str = event.pattern_match.group(1)
-        redis_uid: str = f'youtube_video:{video_uid}'
+        redis_uid: str = f'youtube:video:{video_uid}'
         chat_id = event.input_chat
         input_file = await redis_client.get(redis_uid)
 
@@ -37,8 +37,9 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
 
         progress_hook.message_id = await client.edit_message(entity=progress_hook.message_id,
                                                              message='Скачиваю видео')
-        input_file, thumb_id = await download_and_upload_video_with_thumb(url=f'https://www.youtube.com/watch?v={video_uid}',
-                                                                progress_hook=progress_hook)
+        input_file, thumb_id = await download_and_upload_video_with_thumb(
+            url=f'https://www.youtube.com/watch?v={video_uid}',
+            progress_hook=progress_hook)
 
         input_file = (await client.send_file(entity=chat_id, file=input_file, thumb=thumb_id)).file
         await redis_client.set(redis_uid, f'{input_file.id}', ex=bot_settings.video_cache_ttl)

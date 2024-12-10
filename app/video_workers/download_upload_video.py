@@ -31,6 +31,8 @@ async def _download_video(url: str):
         'verbose': False,
         'progress': False,
         'quiet': True,
+        'retry': 25,
+        'retry-sleep': 0.1
     }
     async with _DOWNLOAD_LIMIT_MUTEX:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
