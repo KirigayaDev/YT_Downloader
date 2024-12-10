@@ -1,8 +1,13 @@
 """Обработка присылаемых ссылок"""
+import asyncio
+
 from telethon import events
+
+from redis_client import redis_client
 
 from telegram_client import client
 from video_workers import download_and_upload_video, DownloaderUploaderHooks
+from clean_settings import bot_settings
 
 
 @client.on(events.NewMessage(pattern=r'^(?:(?:https?:)?\/\/)?(?:(?:(?:www|m(?:usic)?)\.)?youtu(?:\.be|be\.com)\/'
@@ -15,17 +20,24 @@ from video_workers import download_and_upload_video, DownloaderUploaderHooks
 async def handle_youtube_url(event: events.newmessage.EventCommon):
     try:
         video_uid: str = event.pattern_match.group(1)
+        redis_uid: str = f'youtube_video:{video_uid}'
         chat_id = event.input_chat
-        progress_hook = DownloaderUploaderHooks(await client.send_message(chat_id, message='Проверяю видео'))
+        input_file = await redis_client.get(redis_uid)
 
-        # TODO реализовать кэширование через Redis
+        progress_hook = DownloaderUploaderHooks(await client.send_message(chat_id, message='Проверяю видео'))
+        if input_file is not None:
+            await asyncio.gather(client.send_file(entity=chat_id, file=input_file.decode()),
+                                 client.delete_messages(entity='me', message_ids=progress_hook.message_id))
+            return
+
         progress_hook.message_id = await client.edit_message(entity=progress_hook.message_id,
                                                              message='Загружаю видео')
+        input_file = await download_and_upload_video(url=f'https://www.youtube.com/watch?v={video_uid}',
+                                                     progress_hook=progress_hook)
 
-        file_id = await download_and_upload_video(url=f'https://www.youtube.com/watch?v={video_uid}',
-                                                  progress_hook=progress_hook)
-        await client.send_file(entity=chat_id, file=file_id)
+        input_file = (await client.send_file(entity=chat_id, file=input_file)).file
+        await redis_client.set(redis_uid, f'{input_file.id}', ex=bot_settings.video_cache_ttl)
 
-    except Exception:
+    except Exception as e:
         await client.send_message(entity=chat_id, message='Произошла ошибка при попытке отправить видео'
-                                                          ' попробуйте снова')
+                                                          f' попробуйте снова {str(e)}')

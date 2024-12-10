@@ -44,11 +44,11 @@ async def download_and_upload_video(url: str, progress_hook: DownloaderUploaderH
                                                              message='Начинаю выгрузку видео на сервера телеграмма')
 
         file_id: str = await _upload_video(video_path, progress_hook=progress_hook)
+        await asyncio.to_thread(os.remove, video_path)
         return file_id
 
     except Exception:
         pass
 
     finally:
-        await asyncio.gather(asyncio.to_thread(os.remove, video_path),
-                             client.delete_messages(entity=None, message_ids=progress_hook.message_id))
+        await client.delete_messages(entity=None, message_ids=progress_hook.message_id)
