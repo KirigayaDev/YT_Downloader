@@ -52,7 +52,7 @@ async def _upload_video(video_path: str, progress_hook: DownloaderUploaderHooks)
                                         progress_callback=progress_hook.progress_upload_hook)
 
 
-async def _create_thumbnail(video_path: str):
+async def _create_and_upload_thumbnail(video_path: str):
     async with _UPLOAD_LIMIT_MUTEX:
         thumb_path = video_path.rsplit('.', 1)
         thumb_path = f'{thumb_path[0]}.png'
@@ -75,7 +75,7 @@ async def download_and_upload_video_with_thumb(url: str, progress_hook: Download
                                                              message='Начинаю выгрузку видео на сервера телеграмма')
 
         file_id, thumb_id = await asyncio.gather(_upload_video(video_path, progress_hook=progress_hook),
-                                                 _create_thumbnail(video_path))
+                                                 _create_and_upload_thumbnail(video_path))
         await asyncio.to_thread(os.remove, video_path)
         return file_id, thumb_id
 
