@@ -5,7 +5,7 @@ import asyncio
 
 import message_handlers
 from telegram_client import client
-from clean_settings import settings
+from clean_settings import bot_settings
 
 
 def main() -> None:
@@ -15,7 +15,7 @@ def main() -> None:
     """
     if os.path.exists('./videos'):
         shutil.rmtree('./videos')
-    client.start(bot_token=settings.bot_token)
+    client.start(bot_token=bot_settings.token)
     print('Бот запущен')
     message_handlers.print_me.log_enable_url_handlers()
     client.run_until_disconnected()

@@ -16,8 +16,7 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
     try:
         video_uid: str = event.pattern_match.group(1)
         chat_id = event.input_chat
-        progress_hook = DownloaderUploaderHooks(await client.send_message(chat_id,
-                                                                          message='Проверяю видео'))
+        progress_hook = DownloaderUploaderHooks(await client.send_message(chat_id, message='Проверяю видео'))
 
         # TODO реализовать кэширование через Redis
         progress_hook.message_id = await client.edit_message(entity=progress_hook.message_id,

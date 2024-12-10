@@ -5,12 +5,12 @@ import uuid
 import os
 
 from telegram_client import client
-from clean_settings import settings
+from clean_settings import bot_settings
 
 from .progress_callbacks import DownloaderUploaderHooks
 
-_DOWNLOAD_LIMIT_MUTEX = asyncio.Semaphore(settings.parallel_download_count_limit)
-_UPLOAD_LIMIT_MUTEX = asyncio.Semaphore(settings.parallel_upload_count_limit)
+_DOWNLOAD_LIMIT_MUTEX = asyncio.Semaphore(bot_settings.parallel_download_count_limit)
+_UPLOAD_LIMIT_MUTEX = asyncio.Semaphore(bot_settings.parallel_upload_count_limit)
 
 
 async def _download_video(url: str):
@@ -20,7 +20,7 @@ async def _download_video(url: str):
         'merge_output_format': 'mp4',
         'nooverwrites:': True,
         'restrictfilenames': True,
-        'max_filesize': settings.max_filesize,
+        'max_filesize': bot_settings.max_filesize,
         'verbose': False,
         'progress': False,
         'quiet': True,

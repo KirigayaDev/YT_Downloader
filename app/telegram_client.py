@@ -1,6 +1,7 @@
 """Инициализация телеграм клиента"""
 from telethon import TelegramClient
 
-from clean_settings import settings
+from clean_settings import bot_settings
 
-client: TelegramClient = TelegramClient('./sessions/bot.session', api_id=settings.api_id, api_hash=settings.api_hash)
+client: TelegramClient = TelegramClient('./sessions/bot.session', api_id=bot_settings.api_id,
+                                        api_hash=bot_settings.api_hash)

@@ -2,14 +2,14 @@
 Валидация конфиг файла
 """
 from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 
 
-class Settings(BaseSettings):
+class BotSettings(BaseSettings):
     """
-    Класс отвечающий за парс .env файла
+    Класс отвечающий за настройки бота
     """
-    bot_token: str = Field()
+    token: str = Field(alias='bot_token')
     api_id: str = Field()
     api_hash: str = Field()
     parallel_download_count_limit: int = Field()
@@ -17,8 +17,14 @@ class Settings(BaseSettings):
     max_filesize: int = Field()
 
 
+class RedisSettings(BaseSettings):
+    host: str = Field(alias='redis_host')
+    port: int = Field(alias='redis_port')
+
+
 try:
-    settings = Settings()
+    bot_settings = BotSettings()
+    redis_settings = RedisSettings()
 
 except Exception:
     raise Exception(".env настроен неправильно")

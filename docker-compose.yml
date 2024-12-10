@@ -8,6 +8,16 @@ services:
         restart: always
         env_file:
             - .env
+            - .env-redis
         volumes:
             - ./app/sessions:/app/sessions
-            
+        depends_on:
+            - redis
+    
+    redis:
+        image: redis:latest
+        restart: always
+        ports:
+            - "6379:6379"
+        volumes:
+            - ./redis_data:/data
