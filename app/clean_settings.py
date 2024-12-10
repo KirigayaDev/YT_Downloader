@@ -16,8 +16,6 @@ class Settings(BaseSettings):
     parallel_upload_count_limit: int = Field()
     max_filesize: int = Field()
 
-    model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8')
-
 
 try:
     settings = Settings()
