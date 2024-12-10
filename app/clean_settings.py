@@ -16,6 +16,7 @@ class BotSettings(BaseSettings):
     parallel_upload_count_limit: int = Field()
     max_filesize: int = Field()
     video_cache_ttl: int = Field()
+    parallel_upload_thumbnails_limit: int = Field()
 
 
 class RedisSettings(BaseSettings):

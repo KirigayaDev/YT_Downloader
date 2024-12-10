@@ -1,8 +1,9 @@
 """Скачивание видео и выгрузка на сервера телеграмма"""
-import asyncio
-import yt_dlp
-import uuid
 import os
+import uuid
+import asyncio
+import subprocess
+import yt_dlp
 
 from telegram_client import client
 from clean_settings import bot_settings
@@ -11,6 +12,7 @@ from .progress_callbacks import DownloaderUploaderHooks
 
 _DOWNLOAD_LIMIT_MUTEX = asyncio.Semaphore(bot_settings.parallel_download_count_limit)
 _UPLOAD_LIMIT_MUTEX = asyncio.Semaphore(bot_settings.parallel_upload_count_limit)
+_THUMBNAIL_UPLOAD_LIMIT_MUTEX = asyncio.Semaphore(bot_settings.parallel_upload_thumbnails_limit)
 
 
 async def _download_video(url: str):
@@ -48,15 +50,32 @@ async def _upload_video(video_path: str, progress_hook: DownloaderUploaderHooks)
                                         progress_callback=progress_hook.progress_upload_hook)
 
 
-async def download_and_upload_video(url: str, progress_hook: DownloaderUploaderHooks) -> int:
+async def _create_thumbnail(video_path: str):
+    async with _UPLOAD_LIMIT_MUTEX:
+        thumb_path = video_path.rsplit('.', 1)
+        thumb_path = f'{thumb_path[0]}.png'
+
+        await asyncio.to_thread(subprocess.call, ['ffmpeg', '-i', video_path, '-ss', '00:00:00.000',
+                                                  '-vframes', '1', thumb_path])
+        try:
+            thumb_id = await client.upload_file(thumb_path, part_size_kb=512)
+        except Exception:
+            pass
+        finally:
+            await asyncio.to_thread(os.remove, thumb_path)
+        return thumb_id
+
+
+async def download_and_upload_video_with_thumb(url: str, progress_hook: DownloaderUploaderHooks) -> int:
     try:
         video_path: str = await _download_video(url)
         progress_hook.message_id = await client.edit_message(entity=progress_hook.message_id,
                                                              message='Начинаю выгрузку видео на сервера телеграмма')
 
-        file_id: str = await _upload_video(video_path, progress_hook=progress_hook)
+        file_id, thumb_id = await asyncio.gather(_upload_video(video_path, progress_hook=progress_hook),
+                                                 _create_thumbnail(video_path))
         await asyncio.to_thread(os.remove, video_path)
-        return file_id
+        return file_id, thumb_id
 
     except Exception:
         pass

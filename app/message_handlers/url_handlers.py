@@ -6,7 +6,7 @@ from telethon import events
 from redis_client import redis_client
 
 from telegram_client import client
-from video_workers import download_and_upload_video, DownloaderUploaderHooks
+from video_workers import download_and_upload_video_with_thumb, DownloaderUploaderHooks
 from clean_settings import bot_settings
 
 
@@ -36,13 +36,13 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
             return
 
         progress_hook.message_id = await client.edit_message(entity=progress_hook.message_id,
-                                                             message='Загружаю видео')
-        input_file = await download_and_upload_video(url=f'https://www.youtube.com/watch?v={video_uid}',
-                                                     progress_hook=progress_hook)
+                                                             message='Скачиваю видео')
+        input_file, thumb_id = await download_and_upload_video_with_thumb(url=f'https://www.youtube.com/watch?v={video_uid}',
+                                                                progress_hook=progress_hook)
 
-        input_file = (await client.send_file(entity=chat_id, file=input_file)).file
+        input_file = (await client.send_file(entity=chat_id, file=input_file, thumb=thumb_id)).file
         await redis_client.set(redis_uid, f'{input_file.id}', ex=bot_settings.video_cache_ttl)
 
     except Exception as e:
         await client.send_message(entity=chat_id, message='Произошла ошибка при попытке отправить видео'
-                                                          f' попробуйте снова {str(e)}')
+                                                          ' попробуйте снова')
