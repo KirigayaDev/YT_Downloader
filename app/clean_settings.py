@@ -1,5 +1,5 @@
 """
-Валидация конфиг файла
+Парс и валидация конфигов
 """
 from pydantic import Field
 from pydantic_settings import BaseSettings

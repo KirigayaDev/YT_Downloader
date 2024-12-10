@@ -14,6 +14,11 @@ _UPLOAD_LIMIT_MUTEX = asyncio.Semaphore(bot_settings.parallel_upload_count_limit
 
 
 async def _download_video(url: str):
+    """
+    Скачивание видео с учётом ограничения одновременных скачиваний видео
+    :param url:
+    :return:
+    """
     ydl_opts = {
         'outtmpl': f'videos/%(title)s_{uuid.uuid4().hex}.%(ext)s',
         'format': 'best',
@@ -32,6 +37,12 @@ async def _download_video(url: str):
 
 
 async def _upload_video(video_path: str, progress_hook: DownloaderUploaderHooks):
+    """
+    Выгрузка видео на сервера телеграма с учётом ограничения одновременных выгрузок видео
+    :param video_path:
+    :param progress_hook:
+    :return:
+    """
     async with _UPLOAD_LIMIT_MUTEX:
         return await client.upload_file(video_path, part_size_kb=512,
                                         progress_callback=progress_hook.progress_upload_hook)

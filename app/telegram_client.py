@@ -1,4 +1,6 @@
-"""Инициализация телеграм клиента"""
+"""
+Инициализация телеграм клиента
+"""
 from telethon import TelegramClient
 
 from clean_settings import bot_settings

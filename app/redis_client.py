@@ -1,3 +1,6 @@
+"""
+Запуск клиента для работы с redis
+"""
 import redis.asyncio as redis
 from clean_settings import redis_settings
 

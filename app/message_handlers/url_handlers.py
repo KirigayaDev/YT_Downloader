@@ -18,6 +18,11 @@ from clean_settings import bot_settings
                                      r'?|www\.youtube-nocookie\.com\/embed\/)'
                                      r'([\w-]{11})[\?&#]?\S*$'))
 async def handle_youtube_url(event: events.newmessage.EventCommon):
+    """
+    Скачивание и отправка видео по ссылке ютуба
+    :param event:
+    :return:
+    """
     try:
         video_uid: str = event.pattern_match.group(1)
         redis_uid: str = f'youtube_video:{video_uid}'
