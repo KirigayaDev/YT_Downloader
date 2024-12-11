@@ -30,7 +30,7 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
         chat_id = event.input_chat
         input_file = await redis_client.get(redis_uid)
 
-        progress_hook = DownloaderUploaderHooks(await client.send_message(chat_id, message='Проверяю видео'))
+        progress_hook = DownloaderUploaderHooks(await event.reply('Проверяю видео'))
         if input_file is not None:
             await asyncio.gather(client.send_file(entity=chat_id, file=input_file.decode()),
                                  client.delete_messages(entity='me', message_ids=progress_hook.message_id))
@@ -50,5 +50,4 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
         await redis_client.set(redis_uid, input_file, ex=bot_settings.video_cache_ttl)
 
     except Exception as e:
-        await client.send_message(entity=chat_id, message='Произошла ошибка при попытке отправить видео'
-                                                          f' попробуйте снова {e}')
+        await event.reply('Произошла ошибка при попытке отправить видео\nпопробуйте снова')
