@@ -1,12 +1,13 @@
 """Обработка присылаемых ссылок"""
 import asyncio
+import os
 
 from telethon import events
 
 from redis_client import redis_client
 
 from telegram_client import client
-from video_workers import download_and_upload_video_with_thumb, DownloaderUploaderHooks
+from video_workers import VideoInfo, DownloaderUploaderHooks
 from clean_settings import bot_settings
 
 
@@ -37,13 +38,17 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
 
         progress_hook.message_id = await client.edit_message(entity=progress_hook.message_id,
                                                              message='Скачиваю видео')
-        input_file, thumb_id = await download_and_upload_video_with_thumb(
-            url=f'https://www.youtube.com/watch?v={video_uid}',
-            progress_hook=progress_hook)
 
-        input_file = (await client.send_file(entity=chat_id, file=input_file, thumb=thumb_id)).file
-        await redis_client.set(redis_uid, f'{input_file.id}', ex=bot_settings.video_cache_ttl)
+        video_info = VideoInfo(url=f'https://www.youtube.com/watch?v={video_uid}', progress_hook=progress_hook)
+        await video_info.download_video()
+        await asyncio.gather(video_info.upload_video(), video_info.create_thumbnail(upload=True))
+
+        input_file = await asyncio.gather(video_info.send_video(chat_id),
+                                          asyncio.to_thread(video_info.remove_video_from_disc),
+                                          asyncio.to_thread(video_info.remove_thumbnail_from_disc))
+        input_file = input_file[0]
+        await redis_client.set(redis_uid, input_file, ex=bot_settings.video_cache_ttl)
 
     except Exception as e:
         await client.send_message(entity=chat_id, message='Произошла ошибка при попытке отправить видео'
-                                                          ' попробуйте снова')
+                                                          f' попробуйте снова {e}')
