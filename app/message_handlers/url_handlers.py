@@ -1,6 +1,6 @@
 """Обработка присылаемых ссылок"""
 import asyncio
-import os
+import re
 
 from telethon import events
 
@@ -10,14 +10,16 @@ from telegram_client import client
 from video_workers import VideoInfo, DownloaderUploaderHooks
 from clean_settings import bot_settings
 
+_YOUTUBE_LINK_REGEX = re.compile(r'^(?:(?:https?:)?\/\/)?(?:(?:(?:www|m(?:usic)?)\.)?youtu(?:\.be|be\.com)\/'
+                                 r'(?:shorts\/|live\/|v\/|e(?:mbed)?\/|watch(?:\/|\?(?:\S+=\S+&)*v=)'
+                                 r'|oembed\?url=https?%3A\/\/'
+                                 r'(?:www|m(?:usic)?)\.youtube\.com\/watch\?(?:\S+=\S+&)*v%3D|attribution_link\?'
+                                 r'(?:\S+=\S+&)*u=(?:\/|%2F)watch(?:\?|%3F)v(?:=|%3D))'
+                                 r'?|www\.youtube-nocookie\.com\/embed\/)'
+                                 r'([\w-]{11})[\?&#]?\S*$')
 
-@client.on(events.NewMessage(pattern=r'^(?:(?:https?:)?\/\/)?(?:(?:(?:www|m(?:usic)?)\.)?youtu(?:\.be|be\.com)\/'
-                                     r'(?:shorts\/|live\/|v\/|e(?:mbed)?\/|watch(?:\/|\?(?:\S+=\S+&)*v=)'
-                                     r'|oembed\?url=https?%3A\/\/'
-                                     r'(?:www|m(?:usic)?)\.youtube\.com\/watch\?(?:\S+=\S+&)*v%3D|attribution_link\?'
-                                     r'(?:\S+=\S+&)*u=(?:\/|%2F)watch(?:\?|%3F)v(?:=|%3D))'
-                                     r'?|www\.youtube-nocookie\.com\/embed\/)'
-                                     r'([\w-]{11})[\?&#]?\S*$',
+
+@client.on(events.NewMessage(pattern=_YOUTUBE_LINK_REGEX,
                              incoming=True))
 async def handle_youtube_url(event: events.newmessage.EventCommon):
     """
@@ -29,18 +31,18 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
         video_uid: str = event.pattern_match.group(1)
         redis_uid: str = f'youtube:video:{video_uid}'
         chat_id = event.input_chat
-        input_file = await redis_client.get(redis_uid)
+        video_info = VideoInfo(url=f'https://www.youtube.com/watch?v={video_uid}',
+                               progress_hook=DownloaderUploaderHooks(await event.reply('Проверяю видео')))
+        video_info.video_id = await redis_client.get(redis_uid)
 
-        progress_hook = DownloaderUploaderHooks(await event.reply('Проверяю видео'))
-        if input_file is not None:
+        if video_info.video_id is not None:
             await asyncio.gather(
-                client.send_file(entity=chat_id, file=input_file.decode(), reply_to=event.message.id),
-                client.delete_messages(entity='me', message_ids=progress_hook.message_id))
+                client.send_file(entity=chat_id, file=video_info.video_id.decode(), reply_to=event.message.id),
+                client.delete_messages(entity='me', message_ids=video_info.progress_hook.message_id))
             return
 
-        progress_hook.message_id = await client.edit_message(entity=progress_hook.message_id,
-                                                             message='Скачиваю видео')
-        video_info = VideoInfo(url=f'https://www.youtube.com/watch?v={video_uid}', progress_hook=progress_hook)
+        video_info.progress_hook.message_id = await client.edit_message(entity=video_info.progress_hook.message_id,
+                                                                        message='Скачиваю видео')
 
         await video_info.download_video()
         await asyncio.gather(video_info.upload_video(), video_info.create_thumbnail(upload=True))
