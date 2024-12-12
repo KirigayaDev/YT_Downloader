@@ -1,3 +1,6 @@
+"""
+Модуль отвечающий за работу с видео
+"""
 import os
 import uuid
 import asyncio
@@ -15,6 +18,9 @@ _THUMBNAIL_UPLOAD_LIMIT_MUTEX = asyncio.Semaphore(bot_settings.parallel_upload_t
 
 
 class VideoInfo:
+    """
+    Класс отвечающий за работу с видео
+    """
 
     def __init__(self, url: str, progress_hook: DownloaderUploaderHooks):
         self.url: str = url

@@ -1,4 +1,6 @@
-"""Запуск проекта"""
+"""
+Запуск проекта
+"""
 import os
 import shutil
 import asyncio

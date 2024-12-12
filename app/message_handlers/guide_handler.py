@@ -1,3 +1,6 @@
+"""
+Отправка инструкций пользователю
+"""
 from telethon import events
 
 from telegram_client import client
