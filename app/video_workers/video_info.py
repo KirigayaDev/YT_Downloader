@@ -73,12 +73,11 @@ class VideoInfo:
         async with _THUMBNAIL_UPLOAD_LIMIT_MUTEX:
             self.thumbnail_id = await client.upload_file(self.thumbnail_path, part_size_kb=512)
 
-    async def send_video(self, chat_id):
+    async def send_video(self, chat_id, reply_to=None):
         info = await client.send_file(entity=chat_id, file=self.video_id, thumb=self.thumbnail_id,
-                                      file_size=self.video_size, supports_streaming=True)
-        await client.delete_messages(entity='me', message_ids=self.progress_hook.message_id)
+                                      file_size=self.video_size, supports_streaming=True, reply_to=reply_to)
 
-        return info.file.id
+        self.video_id = info.file.id
 
     def remove_video_from_disc(self):
         os.remove(self.video_path)

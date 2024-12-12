@@ -17,7 +17,8 @@ from clean_settings import bot_settings
                                      r'(?:www|m(?:usic)?)\.youtube\.com\/watch\?(?:\S+=\S+&)*v%3D|attribution_link\?'
                                      r'(?:\S+=\S+&)*u=(?:\/|%2F)watch(?:\?|%3F)v(?:=|%3D))'
                                      r'?|www\.youtube-nocookie\.com\/embed\/)'
-                                     r'([\w-]{11})[\?&#]?\S*$'))
+                                     r'([\w-]{11})[\?&#]?\S*$',
+                             incoming=True))
 async def handle_youtube_url(event: events.newmessage.EventCommon):
     """
     Скачивание и отправка видео по ссылке ютуба
@@ -32,22 +33,24 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
 
         progress_hook = DownloaderUploaderHooks(await event.reply('Проверяю видео'))
         if input_file is not None:
-            await asyncio.gather(client.send_file(entity=chat_id, file=input_file.decode()),
-                                 client.delete_messages(entity='me', message_ids=progress_hook.message_id))
+            await asyncio.gather(
+                client.send_file(entity=chat_id, file=input_file.decode(), reply_to=event.message.id),
+                client.delete_messages(entity='me', message_ids=progress_hook.message_id))
             return
 
         progress_hook.message_id = await client.edit_message(entity=progress_hook.message_id,
                                                              message='Скачиваю видео')
-
         video_info = VideoInfo(url=f'https://www.youtube.com/watch?v={video_uid}', progress_hook=progress_hook)
+
         await video_info.download_video()
         await asyncio.gather(video_info.upload_video(), video_info.create_thumbnail(upload=True))
 
-        input_file = await asyncio.gather(video_info.send_video(chat_id),
-                                          asyncio.to_thread(video_info.remove_video_from_disc),
-                                          asyncio.to_thread(video_info.remove_thumbnail_from_disc))
-        input_file = input_file[0]
-        await redis_client.set(redis_uid, input_file, ex=bot_settings.video_cache_ttl)
+        await asyncio.gather(video_info.send_video(chat_id, reply_to=event.message.id),
+                             client.delete_messages(entity='me', message_ids=video_info.progress_hook.message_id),
+                             asyncio.to_thread(video_info.remove_video_from_disc),
+                             asyncio.to_thread(video_info.remove_thumbnail_from_disc))
 
-    except Exception as e:
-        await event.reply('Произошла ошибка при попытке отправить видео\nпопробуйте снова')
+        await redis_client.set(redis_uid, video_info.video_id, ex=bot_settings.video_cache_ttl)
+
+    except Exception:
+        await event.reply('Произошла ошибка при попытке отправить видео\nПопробуйте снова')
