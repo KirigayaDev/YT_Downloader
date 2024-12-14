@@ -32,24 +32,31 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
     try:
         video_uid: str = event.pattern_match.group(1)
         redis_uid: str = f'youtube:video:{video_uid}'
-        chat_id = event.input_chat
+        chat = event.input_chat
+        downloader_uid = f'downloader:{chat}'
         video_info = VideoInfo(url=f'https://www.youtube.com/watch?v={video_uid}',
                                progress_hook=DownloaderUploaderHooks(await event.reply('Проверяю видео')))
         video_info.video_id = await redis_client.get(redis_uid)
 
         if video_info.video_id is not None:
             await asyncio.gather(
-                client.send_file(entity=chat_id, file=video_info.video_id.decode(), reply_to=event.message.id),
+                client.send_file(entity=chat, file=video_info.video_id.decode(), reply_to=event.message.id),
+                client.delete_messages(entity='me', message_ids=video_info.progress_hook.message_id))
+            return
+
+        if await redis_client.get(downloader_uid):
+            await asyncio.gather(
+                event.reply("У вас уже скачивается видео\nПодождите пожалуйста пока его отправит..."),
                 client.delete_messages(entity='me', message_ids=video_info.progress_hook.message_id))
             return
 
         video_info.progress_hook.message_id = await client.edit_message(entity=video_info.progress_hook.message_id,
                                                                         message='Скачиваю видео')
 
-        await video_info.download_video()
+        await asyncio.gather(redis_client.set(downloader_uid, 1, ex=600), video_info.download_video())
         await asyncio.gather(video_info.upload_video(), video_info.create_thumbnail(upload=True))
 
-        await asyncio.gather(video_info.send_video(chat_id, reply_to=event.message.id),
+        await asyncio.gather(video_info.send_video(chat, reply_to=event.message.id),
                              client.delete_messages(entity='me', message_ids=video_info.progress_hook.message_id),
                              asyncio.to_thread(video_info.remove_video_from_disc),
                              asyncio.to_thread(video_info.remove_thumbnail_from_disc))
@@ -57,5 +64,8 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
         if video_info.video_id is not None:
             await redis_client.set(redis_uid, video_info.video_id, ex=bot_settings.video_cache_ttl)
 
-    except Exception:
-        await event.reply('Произошла ошибка при попытке отправить видео\nПопробуйте снова')
+    except Exception as e:
+        await event.reply(f'Произошла ошибка при попытке отправить видео\nПопробуйте снова')
+
+    finally:
+        await redis_client.delete(downloader_uid)
