@@ -6,12 +6,8 @@ RUN apt-get update && \
     apt-get install -y ffmpeg && \
     apt-get clean
 
-COPY requirements.txt .
-
-RUN python3 -m venv venv
+COPY . .
 
 RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
 
 CMD ["python3", "main.py"]
