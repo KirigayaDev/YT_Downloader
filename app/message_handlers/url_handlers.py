@@ -54,7 +54,8 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
                              asyncio.to_thread(video_info.remove_video_from_disc),
                              asyncio.to_thread(video_info.remove_thumbnail_from_disc))
 
-        await redis_client.set(redis_uid, video_info.video_id, ex=bot_settings.video_cache_ttl)
+        if video_info.video_id is not None:
+            await redis_client.set(redis_uid, video_info.video_id, ex=bot_settings.video_cache_ttl)
 
     except Exception:
         await event.reply('Произошла ошибка при попытке отправить видео\nПопробуйте снова')

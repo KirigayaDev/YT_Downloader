@@ -80,10 +80,12 @@ class VideoInfo:
             self.thumbnail_id = await client.upload_file(self.thumbnail_path, part_size_kb=512)
 
     async def send_video(self, chat_id, reply_to=None):
-        info = await client.send_file(entity=chat_id, file=self.video_id, thumb=self.thumbnail_id,
-                                      file_size=self.video_size, supports_streaming=True, reply_to=reply_to)
-
-        self.video_id = info.file.id
+        try:
+            info = await client.send_file(entity=chat_id, file=self.video_id, thumb=self.thumbnail_id,
+                                          file_size=self.video_size, supports_streaming=True, reply_to=reply_to)
+            self.video_id = info.file.id
+        except Exception:
+            self.video_id = None
 
     def remove_video_from_disc(self):
         os.remove(self.video_path)
