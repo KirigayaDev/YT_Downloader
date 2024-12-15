@@ -29,41 +29,50 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
     :param event:
     :return:
     """
-    try:
-        video_uid: str = event.pattern_match.group(1)
-        redis_uid: str = f'youtube:video:{video_uid}'
-        chat = event.input_chat
-        downloader_uid = f'downloader:{chat}'
-        video_info = VideoInfo(url=f'https://www.youtube.com/watch?v={video_uid}',
-                               progress_hook=DownloaderUploaderHooks(await event.reply('Проверяю видео')))
-        video_info.video_id = await redis_client.get(redis_uid)
-
-        if video_info.video_id is not None:
+    video_uid: str = event.pattern_match.group(1)
+    redis_uid: str = f'youtube:video:{video_uid}'
+    chat = event.input_chat
+    downloader_uid = f'downloader:{chat}'
+    video_info = VideoInfo(url=f'https://www.youtube.com/watch?v={video_uid}',
+                           progress_hook=DownloaderUploaderHooks(await event.reply('Проверяю видео')))
+    # Взятие видео из кэша
+    video_info.video_id = await redis_client.get(redis_uid)
+    if video_info.video_id is not None:
+        try:
             await asyncio.gather(
                 client.send_file(entity=chat, file=video_info.video_id.decode(), reply_to=event.message.id),
                 client.delete_messages(entity='me', message_ids=video_info.progress_hook.message_id))
-            return
+        except Exception:
+            pass
+        return
 
-        if await redis_client.get(downloader_uid):
+    # Проверка скачивается ли у юзера другое видео
+    if await redis_client.get(downloader_uid):
+        try:
             await asyncio.gather(
                 event.reply("У вас уже скачивается видео\nПодождите пожалуйста пока его отправит..."),
                 client.delete_messages(entity='me', message_ids=video_info.progress_hook.message_id))
-            return
+        except Exception:
+            pass
+        return
 
+    # Процесс скачивания видео
+    try:
         video_info.progress_hook.message_id = await client.edit_message(entity=video_info.progress_hook.message_id,
                                                                         message='Скачиваю видео')
 
-        await asyncio.gather(redis_client.set(downloader_uid, 1, ex=600), video_info.download_video())
+        await asyncio.gather(redis_client.set(downloader_uid, 1, ex=60), video_info.download_video())
         await asyncio.gather(video_info.upload_video(), video_info.create_thumbnail(upload=True))
 
+        # Отправка видео и очистка его с диска
         await asyncio.gather(video_info.send_video(chat, reply_to=event.message.id),
                              client.delete_messages(entity='me', message_ids=video_info.progress_hook.message_id),
                              asyncio.to_thread(video_info.remove_video_from_disc),
-                             asyncio.to_thread(video_info.remove_thumbnail_from_disc),
-                             redis_client.delete(downloader_uid))
-
+                             asyncio.to_thread(video_info.remove_thumbnail_from_disc))
         if video_info.video_id is not None:
             await redis_client.set(redis_uid, video_info.video_id, ex=bot_settings.video_cache_ttl)
 
-    except Exception as e:
+    except Exception:
         await event.reply(f'Произошла ошибка при попытке отправить видео\nПопробуйте снова')
+    finally:
+        await redis_client.delete(downloader_uid)

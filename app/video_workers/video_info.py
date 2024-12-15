@@ -48,8 +48,8 @@ class VideoInfo:
             'verbose': False,
             'progress': False,
             'quiet': True,
-            'retry': 25,
-            'retry-sleep': 0.1
+            'retry': 10,
+            'retry-sleep': 0.25
         }
         async with _DOWNLOAD_LIMIT_MUTEX:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
