@@ -48,7 +48,7 @@ class VideoInfo:
             'verbose': False,
             'progress': False,
             'quiet': True,
-            'retry': 10,
+            'retry': 32,
             'retry-sleep': 0.25
         }
         async with _DOWNLOAD_LIMIT_MUTEX:
