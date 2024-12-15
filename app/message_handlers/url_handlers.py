@@ -33,7 +33,7 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
     video_uid: str = event.pattern_match.group(1)
     redis_uid: str = f'youtube:video:{video_uid}'
     user_id = event.input_chat.user_id
-    downloader_uid = f'downloader:{user_id}'
+    downloader_lock = DownloadLocker(user_id)
     video_info = VideoInfo(url=f'https://www.youtube.com/watch?v={video_uid}',
                            progress_hook=DownloaderUploaderHooks(await event.reply('Проверяю видео')))
     # Взятие видео из кэша
@@ -48,7 +48,7 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
         return
 
     # Проверка скачивается ли у юзера другое видео
-    if await redis_client.get(downloader_uid):
+    if await downloader_lock.is_locked():
         try:
             await asyncio.gather(
                 event.reply("У вас уже скачивается видео\nПодождите пожалуйста пока его отправит..."),
@@ -61,7 +61,7 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
     try:
         video_info.progress_hook.message_id = await client.edit_message(entity=video_info.progress_hook.message_id,
                                                                         message='Скачиваю видео')
-        async with DownloadLocker(downloader_uid):
+        async with downloader_lock:
             await video_info.download_video()
             await asyncio.gather(video_info.upload_video(), video_info.create_thumbnail(upload=True))
 
