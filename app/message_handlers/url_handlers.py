@@ -34,7 +34,7 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
                            progress_hook=DownloaderUploaderHooks(await event.reply('Проверяю видео')),
                            cache_uid=f'youtube:video:{video_uid}')
     # Взятие видео из кэша
-    if await video_info.check_cache():
+    if await video_info.try_get_from_cache():
         try:
             await asyncio.gather(
                 client.send_file(entity=user_id, file=video_info.video_id, reply_to=event.message.id),

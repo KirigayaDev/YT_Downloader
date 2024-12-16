@@ -59,7 +59,7 @@ class VideoInfo:
                 self.video_path = ydl.prepare_filename(result)
                 self.video_size = os.path.getsize(self.video_path)
 
-    async def check_cache(self) -> bool:
+    async def try_get_from_cache(self) -> bool:
         self.video_id = await redis_client.get(self.cache_uid)
         if self.video_id is not None:
             self.video_id = self.video_id.decode()
