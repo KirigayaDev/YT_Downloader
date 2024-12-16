@@ -3,7 +3,6 @@
 """
 import os
 import shutil
-import asyncio
 
 import message_handlers
 from telegram_client import client
@@ -24,4 +23,4 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()

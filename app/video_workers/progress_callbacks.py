@@ -2,6 +2,7 @@
 Коллбэки для отображения прогрессов видео
 """
 import math
+
 from telegram_client import client
 
 
