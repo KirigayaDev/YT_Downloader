@@ -47,3 +47,16 @@ docker-compose up --build
 ```shell
 docker-compose up
 ```
+
+
+# Используемые технологии
+
+| Технология                                       | Для чего используется                               |
+|--------------------------------------------------|-----------------------------------------------------|
+| [Python](https://www.python.org)                 | Язык программирования на котором написан проект     |
+| [Docker](https://docs.docker.com)                | Удобный запуск проекта в виртуальных машинах        |
+| [Redis](https://redis.io)                        | NoSQL база данных для кэширования                   |
+| [telethon](https://docs.telethon.dev/en/stable/) | Продвинутая библиотека для работы с телеграм ботами |
+| [Pydantic](https://docs.pydantic.dev)            | Парс и валидация конфигов                           |
+| [YT-dlp](https://github.com/yt-dlp/yt-dlp)       | Скачивание видео                                    |
+| [redis-py](https://github.com/redis/redis-py)    | Библиотека для работы с Redis в питоне              |
