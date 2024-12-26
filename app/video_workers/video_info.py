@@ -18,6 +18,11 @@ _UPLOAD_LIMIT_MUTEX = asyncio.Semaphore(bot_settings.parallel_upload_count_limit
 _THUMBNAIL_UPLOAD_LIMIT_MUTEX = asyncio.Semaphore(bot_settings.parallel_upload_thumbnails_limit)
 
 
+def _check_video_settings(info, *args):
+    if info.get('is_live') or info.get('is_upcoming') or info.get('post_live'):
+        raise Exception('Нельза качать не видео')
+
+
 class VideoInfo:
     """
     Класс отвечающий за работу с видео
@@ -51,7 +56,10 @@ class VideoInfo:
             'progress': False,
             'quiet': True,
             'retry': 32,
-            'retry-sleep': 0.25
+            'retry_sleep': 0.25,
+            'match_filter': _check_video_settings,
+            'no_live_from_start': True,
+            'flat-playlist': True
         }
         async with _DOWNLOAD_LIMIT_MUTEX:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:

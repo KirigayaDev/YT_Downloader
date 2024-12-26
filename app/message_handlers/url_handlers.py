@@ -67,5 +67,5 @@ async def handle_youtube_url(event: events.newmessage.EventCommon):
                                  asyncio.to_thread(video_info.remove_video_from_disc),
                                  asyncio.to_thread(video_info.remove_thumbnail_from_disc))
 
-    except Exception:
-        await event.reply('Произошла ошибка при попытке отправить видео\nПопробуйте снова')
+    except Exception as e:
+        await event.reply(f'Произошла ошибка при попытке отправить видео\n{e}')
